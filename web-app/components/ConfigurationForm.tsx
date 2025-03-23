@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Input } from "./ui/input";
@@ -94,6 +95,7 @@ interface ConfigurationFormProps {
 type ConfigSection = keyof Pick<CompanyConfiguration, 'features' | 'scenarios' | 'personas' | 'evaluation_criteria'>;
 
 export function ConfigurationForm({ onComplete }: ConfigurationFormProps) {
+  const router = useRouter();
   const [config, setConfig] = useState<CompanyConfiguration>(defaultConfiguration);
   const [currentStep, setCurrentStep] = useState(0);
   const [collapsedCards, setCollapsedCards] = useState<Record<string, boolean>>({});
@@ -108,7 +110,7 @@ export function ConfigurationForm({ onComplete }: ConfigurationFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("Configuration submitted:", config);
-    onComplete?.();
+    router.push('/upload');
   };
 
   const nextStep = () => {
@@ -565,7 +567,14 @@ export function ConfigurationForm({ onComplete }: ConfigurationFormProps) {
                     Reset to Default
                   </Button>
                   {currentStep === STEPS.length - 1 ? (
-                    <Button type="submit" className="flex items-center gap-2">
+                    <Button 
+                      type="button" 
+                      onClick={() => {
+                        console.log("Configuration submitted:", config);
+                        router.push('/upload');
+                      }}
+                      className="flex items-center gap-2"
+                    >
                       Save Configuration
                     </Button>
                   ) : (

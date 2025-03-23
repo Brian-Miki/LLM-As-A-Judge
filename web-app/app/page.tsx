@@ -1,71 +1,55 @@
-'use client';
-
-import { useState } from 'react';
-import { FileUpload } from '@/components/FileUpload';
-import { DataPreview } from '@/components/DataPreview';
-import { BaseExample, HallucinationExample } from '@/lib/types';
-import { toast } from 'sonner';
+import Link from "next/link";
+import { Bot, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
-  const [examples, setExamples] = useState<BaseExample[]>([]);
-  const [hallucinations, setHallucinations] = useState<HallucinationExample[]>([]);
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  const handleUpload = (uploadedData: BaseExample[]) => {
-    setExamples(uploadedData);
-    setHallucinations([]); // Reset hallucinations when new data is uploaded
-    toast.success(`Successfully loaded ${uploadedData.length} examples`);
-  };
-
-  const handleError = (error: string) => {
-    toast.error(error);
-  };
-
-  const handleGenerateHallucination = async (example: BaseExample) => {
-    setIsGenerating(true);
-    try {
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(example),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to generate variations');
-      }
-
-      const data = await response.json();
-      setHallucinations(prev => [...prev, ...data.variations]);
-      toast.success('Successfully generated variations');
-    } catch (error) {
-      toast.error('Failed to generate variations: ' + (error as Error).message);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
   return (
-    <main className="container mx-auto py-8 px-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="space-y-2 mb-8">
-          <h1 className="scroll-m-20 text-4xl font-bold tracking-tight">
-            LLM Judge Data Creator
-          </h1>
-          <p className="text-muted-foreground">
-            Upload your examples and generate hallucination variations to test LLM judge evaluation.
-          </p>
+    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50/50">
+      <div className="container mx-auto px-4 py-24 flex flex-col items-center text-center">
+        <div className="flex items-center gap-2 mb-6">
+          <Bot className="w-12 h-12 text-primary" />
+          <h1 className="text-4xl font-bold">Customer Support Scenario Lab</h1>
+        </div>
+        
+        <p className="text-xl text-muted-foreground mb-12 max-w-2xl">
+          Design and generate realistic test scenarios for your AI customer support agents
+        </p>
+
+        <div className="mb-12">
+          <Link href="/onboarding">
+            <Button size="lg" className="text-lg px-8">
+              Get Started
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </Link>
         </div>
 
-        <FileUpload onUpload={handleUpload} onError={handleError} />
-        <DataPreview 
-          data={examples} 
-          hallucinations={hallucinations}
-          onGenerateHallucination={!isGenerating ? handleGenerateHallucination : undefined}
-        />
+        <div className="max-w-xl space-y-6">
+          <div className="text-left">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="bg-primary/10 rounded-full w-8 h-8 flex items-center justify-center">
+                <span className="text-primary font-medium">1</span>
+              </div>
+              <h2 className="text-xl font-semibold">Create Agent Profile</h2>
+            </div>
+            <p className="text-muted-foreground pl-10">
+              Define your agent's capabilities, test scenarios, and user personas to establish evaluation criteria
+            </p>
+          </div>
+
+          <div className="text-left">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="bg-primary/10 rounded-full w-8 h-8 flex items-center justify-center">
+                <span className="text-primary font-medium">2</span>
+              </div>
+              <h2 className="text-xl font-semibold">Upload & Generate Data</h2>
+            </div>
+            <p className="text-muted-foreground pl-10">
+              Upload your existing test data or generate new scenarios based on your agent's profile
+            </p>
+          </div>
+        </div>
       </div>
-    </main>
+    </div>
   );
 }
