@@ -3,13 +3,24 @@
 import { useState, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Upload, X, FileText, Loader2 } from "lucide-react";
+import { Upload, X, FileText, Loader2, Wand2, ChevronDown, ChevronUp } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
 
 export default function UploadPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [uploadedScenarios, setUploadedScenarios] = useState<any>(null);
+  const [generatedScenarios, setGeneratedScenarios] = useState<any[]>([]);
+  const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
+
+  const toggleCard = (index: number) => {
+    setExpandedCards(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
+  };
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const validFiles = acceptedFiles.filter(file => {
@@ -28,7 +39,7 @@ export default function UploadPage() {
       'application/json': ['.json'],
       'text/csv': ['.csv']
     },
-    noClick: true // Disable click on the entire dropzone area
+    noClick: true
   });
 
   const removeFile = (index: number) => {
@@ -42,30 +53,72 @@ export default function UploadPage() {
     }
 
     setIsUploading(true);
-    const formData = new FormData();
-    files.forEach(file => {
-      formData.append('files', file);
-    });
-
     try {
-      const response = await fetch('/api/upload', {
+      const file = files[0]; // For now, just handle the first file
+      const content = await file.text();
+      const jsonData = JSON.parse(content);
+      setUploadedScenarios(jsonData);
+      toast.success("File uploaded successfully!");
+      setFiles([]); // Clear files after successful upload
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Failed to parse JSON file');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleGenerate = async () => {
+    if (!uploadedScenarios) {
+      toast.error("Please upload a scenarios file first");
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const response = await fetch('/api/generate', {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(uploadedScenarios),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Upload failed');
+        throw new Error(data.message || 'Generation failed');
       }
 
-      toast.success("Files uploaded successfully!");
-      setFiles([]); // Clear files after successful upload
+      setGeneratedScenarios(data.scenarios);
+
+      // Create a new file with combined scenarios
+      const combinedScenarios = {
+        scenarios: [...uploadedScenarios.scenarios, ...data.scenarios],
+        metadata: {
+          ...uploadedScenarios.metadata,
+          scenario_count: uploadedScenarios.scenarios.length + data.scenarios.length,
+          generated_at: new Date().toISOString()
+        }
+      };
+
+      // Create and trigger download of the new file
+      const blob = new Blob([JSON.stringify(combinedScenarios, null, 2)], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'generated-scenarios.json';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.success("New scenarios generated successfully!");
     } catch (error) {
-      console.error('Upload error:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to upload files');
+      console.error('Generation error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to generate scenarios');
     } finally {
-      setIsUploading(false);
+      setIsGenerating(false);
     }
   };
 
@@ -103,7 +156,7 @@ export default function UploadPage() {
                   type="button" 
                   onClick={(e) => {
                     e.stopPropagation();
-                    open(); // This will open the file dialog
+                    open();
                   }}
                 >
                   Choose Files
@@ -139,7 +192,7 @@ export default function UploadPage() {
                   </div>
                 ))}
               </div>
-              <div className="flex justify-end pt-4">
+              <div className="flex justify-end gap-3 pt-4">
                 <Button 
                   onClick={handleUpload} 
                   size="lg"
@@ -155,6 +208,115 @@ export default function UploadPage() {
                   )}
                 </Button>
               </div>
+            </div>
+          )}
+
+          {uploadedScenarios && (
+            <div className="pt-6 border-t">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h4 className="font-medium">Generate More Scenarios</h4>
+                  <p className="text-sm text-muted-foreground">
+                    {isGenerating 
+                      ? "This may take 15-30 seconds as we use AI to generate high-quality scenarios..."
+                      : "Create additional test scenarios based on your examples"
+                    }
+                  </p>
+                </div>
+                <Button
+                  onClick={handleGenerate}
+                  size="lg"
+                  disabled={isGenerating}
+                  className="gap-2"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="w-4 h-4" />
+                      Generate More
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {generatedScenarios.length > 0 && (
+                <div className="space-y-4">
+                  <h4 className="font-medium">Generated Scenarios:</h4>
+                  <div className="space-y-4">
+                    {generatedScenarios.map((scenario, index) => (
+                      <Card key={index} className="p-4">
+                        <div 
+                          className="flex items-center justify-between cursor-pointer"
+                          onClick={() => toggleCard(index)}
+                        >
+                          <div className="flex-1">
+                            <div className="flex justify-between items-start">
+                              <h5 className="font-medium text-lg">{scenario?.title}</h5>
+                              <span className="text-sm text-muted-foreground">ID: {scenario?.id}</span>
+                            </div>
+                            {!expandedCards[index] && (
+                              <p className="text-sm text-muted-foreground line-clamp-1">{scenario?.description}</p>
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="ml-4 h-8 w-8 hover:bg-muted"
+                          >
+                            {expandedCards[index] ? (
+                              <ChevronUp className="h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+
+                        {expandedCards[index] && (
+                          <div className="space-y-2 mt-4">
+                            <p className="text-sm text-muted-foreground">{scenario?.description}</p>
+                            <div className="mt-4 space-y-3">
+                              <div>
+                                <h6 className="text-sm font-medium mb-1">Customer Message:</h6>
+                                <p className="text-sm bg-muted p-2 rounded-md">
+                                  {scenario?.input?.customer_message}
+                                </p>
+                              </div>
+                              <div>
+                                <h6 className="text-sm font-medium mb-1">Expected Response:</h6>
+                                <div className="text-sm space-y-2">
+                                  <div>
+                                    <span className="font-medium">Tone:</span> {scenario?.expected_response?.tone}
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">Key Points:</span>
+                                    <ul className="list-disc list-inside pl-2">
+                                      {scenario?.expected_response?.key_points?.map((point: string, i: number) => (
+                                        <li key={i}>{point}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                  <div>
+                                    <span className="font-medium">Required Info:</span>
+                                    <ul className="list-disc list-inside pl-2">
+                                      {scenario?.expected_response?.required_info?.map((info: string, i: number) => (
+                                        <li key={i}>{info}</li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

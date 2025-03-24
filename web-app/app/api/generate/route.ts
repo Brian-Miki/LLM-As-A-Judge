@@ -57,7 +57,7 @@ async function generateHallucinations(example: BaseExample): Promise<Hallucinati
 
   // Generate a hallucinated answer
   const hallucinationResponse = await openai.chat.completions.create({
-    model: process.env.OPENAI_MODEL || "gpt-4",
+    model: process.env.OPENAI_MODEL || "gpt-4o-mini",
     messages: [
       {
         role: "user",
@@ -85,7 +85,7 @@ async function generateHallucinations(example: BaseExample): Promise<Hallucinati
 
   // Generate a partial answer
   const partialResponse = await openai.chat.completions.create({
-    model: process.env.OPENAI_MODEL || "gpt-4",
+    model: process.env.OPENAI_MODEL || "gpt-4o-mini",
     messages: [
       {
         role: "system",
@@ -126,7 +126,7 @@ async function generateHallucinations(example: BaseExample): Promise<Hallucinati
 
 async function scoreAnswer(example: HallucinationExample) {
   const response = await openai.chat.completions.create({
-    model: process.env.OPENAI_MODEL || "gpt-4",
+    model: process.env.OPENAI_MODEL || "gpt-4o-mini",
     messages: [
       {
         role: "user",
@@ -161,13 +161,43 @@ async function scoreAnswer(example: HallucinationExample) {
 
 export async function POST(request: Request) {
   try {
-    const example = await request.json();
-    const variations = await generateHallucinations(example);
-    return NextResponse.json({ variations });
+    const { scenarios } = await request.json();
+
+    const prompt = `Given these example customer support scenarios:
+${JSON.stringify(scenarios, null, 2)}
+
+Generate 3 new unique customer support scenarios that follow the same format and structure as the examples above. The scenarios should be realistic, diverse, and maintain consistency with the fields and schema of the provided examples.
+
+Return only the generated scenarios as a JSON object with a "scenarios" array.`;
+
+    const completion = await openai.chat.completions.create({
+      messages: [{ role: "user", content: prompt }],
+      model: "gpt-4o-mini",
+      response_format: { type: "json_object" },
+      temperature: 0.7,
+    });
+
+    const generatedContent = completion.choices[0].message.content;
+    if (!generatedContent) {
+      throw new Error('No content generated');
+    }
+
+    const parsedContent = JSON.parse(generatedContent);
+    
+    if (!parsedContent.scenarios || !Array.isArray(parsedContent.scenarios)) {
+      console.error('Invalid generated content:', parsedContent);
+      throw new Error('Generated content is not in the expected format');
+    }
+
+    return NextResponse.json({
+      success: true,
+      scenarios: parsedContent.scenarios
+    });
+
   } catch (error) {
-    console.error('Error generating hallucinations:', error);
+    console.error('Generation error:', error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'An error occurred' },
+      { success: false, message: error instanceof Error ? error.message : 'Failed to generate scenarios' },
       { status: 500 }
     );
   }
