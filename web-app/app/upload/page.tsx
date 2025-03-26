@@ -96,8 +96,8 @@ export default function UploadPage() {
       
       toast.success("Scenarios analyzed successfully! Redirecting to configuration...");
       
-      // Redirect to the configuration page
-      router.push('/configuration');
+      // Use window.location for a full page reload
+      window.location.href = '/configuration';
       
     } catch (error) {
       console.error('Upload error:', error);

@@ -97,9 +97,10 @@ type ConfigSection = keyof Pick<CompanyConfiguration, 'features' | 'scenarios' |
 
 export function ConfigurationForm({ onComplete }: ConfigurationFormProps) {
   const router = useRouter();
-  const [config, setConfig] = useState<CompanyConfiguration>(defaultConfiguration);
+  const [config, setConfig] = useState<CompanyConfiguration | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [collapsedCards, setCollapsedCards] = useState<Record<string, boolean>>({});
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Try to load suggested configuration first
@@ -115,10 +116,33 @@ export function ConfigurationForm({ onComplete }: ConfigurationFormProps) {
               name: parsedConfig.agent_description?.name || defaultConfiguration.agent_description.name,
               purpose: parsedConfig.agent_description?.purpose || defaultConfiguration.agent_description.purpose
             },
-            features: Array.isArray(parsedConfig.features) ? parsedConfig.features : defaultConfiguration.features,
-            scenarios: Array.isArray(parsedConfig.scenarios) ? parsedConfig.scenarios : defaultConfiguration.scenarios,
-            personas: Array.isArray(parsedConfig.personas) ? parsedConfig.personas : defaultConfiguration.personas,
-            evaluation_criteria: Array.isArray(parsedConfig.evaluation_criteria) ? parsedConfig.evaluation_criteria : defaultConfiguration.evaluation_criteria
+            features: Array.isArray(parsedConfig.features) ? parsedConfig.features.map((f: any) => ({
+              title: f.title || '',
+              description: f.description || ''
+            })) : defaultConfiguration.features,
+            scenarios: Array.isArray(parsedConfig.scenarios) ? parsedConfig.scenarios.map((s: any) => ({
+              title: s.title || '',
+              description: s.description || '',
+              urgency: s.urgency || 'Medium',
+              complexity: s.complexity || 'Moderate'
+            })) : defaultConfiguration.scenarios,
+            personas: Array.isArray(parsedConfig.personas) ? parsedConfig.personas.map((p: any) => ({
+              title: p.title || '',
+              description: p.description || '',
+              characteristics: p.characteristics || '',
+              communication_style: p.communication_style || ''
+            })) : defaultConfiguration.personas,
+            evaluation_criteria: Array.isArray(parsedConfig.evaluation_criteria) ? parsedConfig.evaluation_criteria.map((e: any) => {
+              const criterion = {
+                title: e.title || '',
+                description: e.description || '',
+                weight: e.weight
+              };
+              if (!criterion.weight) {
+                criterion.weight = '0.5';
+              }
+              return criterion;
+            }) : defaultConfiguration.evaluation_criteria
           };
           setConfig(validConfig);
           // Remove the suggestion after loading
@@ -138,7 +162,19 @@ export function ConfigurationForm({ onComplete }: ConfigurationFormProps) {
       // Fall back to default configuration if no suggestion exists
       setConfig(defaultConfiguration);
     }
+    setIsLoading(false);
   }, []);
+
+  if (isLoading || !config) {
+    return (
+      <div className="w-full max-w-4xl mx-auto flex items-center justify-center py-12">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Loading configuration...</p>
+        </div>
+      </div>
+    );
+  }
 
   const toggleCard = (id: string) => {
     setCollapsedCards(prev => ({
@@ -174,7 +210,26 @@ export function ConfigurationForm({ onComplete }: ConfigurationFormProps) {
     section: T[],
     defaultValues: Partial<T> = {}
   ) => {
-    return [...section, { title: "", description: "", ...defaultValues } as T];
+    const baseItem = { title: "", description: "" };
+    
+    // Add specific fields based on section type
+    if ('urgency' in defaultValues || 'complexity' in defaultValues) {
+      // This is a scenario
+      return [...section, { ...baseItem, urgency: "", complexity: "", ...defaultValues } as T];
+    } else if ('characteristics' in defaultValues || 'communication_style' in defaultValues) {
+      // This is a persona
+      return [...section, { ...baseItem, characteristics: "", communication_style: "", ...defaultValues } as T];
+    } else if ('weight' in defaultValues) {
+      // This is an evaluation criterion
+      const evalItem = { ...baseItem, ...defaultValues };
+      if (!evalItem.weight) {
+        evalItem.weight = "0.5";
+      }
+      return [...section, evalItem as T];
+    }
+    
+    // Default case for features
+    return [...section, { ...baseItem, ...defaultValues } as T];
   };
 
   // Generic remove function for any section

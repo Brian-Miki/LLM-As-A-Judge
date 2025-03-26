@@ -107,11 +107,28 @@ export interface CompanyConfiguration {
 // Example default configuration
 export const defaultConfiguration: CompanyConfiguration = {
   agent_description: {
-    name: "",
-    purpose: "",
+    name: "Customer Service AI",
+    purpose: "To provide efficient and helpful customer support",
   },
-  features: [],
-  scenarios: [],
-  personas: [],
-  evaluation_criteria: [],
+  features: [{
+    title: "Basic Query Handling",
+    description: "Ability to understand and respond to common customer inquiries"
+  }],
+  scenarios: [{
+    title: "General Information Request",
+    description: "Customer asking for basic product or service information",
+    urgency: "Low",
+    complexity: "Simple"
+  }],
+  personas: [{
+    title: "Standard Customer",
+    description: "A typical customer seeking assistance",
+    characteristics: "Basic product knowledge, English-speaking",
+    communication_style: "Direct and clear"
+  }],
+  evaluation_criteria: [{
+    title: "Response Accuracy",
+    description: "How accurately the response addresses the customer's query",
+    weight: "0.5"
+  }]
 }; 
