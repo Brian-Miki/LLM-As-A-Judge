@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Upload, X, FileText, Loader2, Wand2, ChevronDown, ChevronUp } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
+import { CompanyConfiguration } from "@/types/config";
+import { useRouter } from "next/navigation";
 
 export default function UploadPage() {
   const [files, setFiles] = useState<File[]>([]);
@@ -14,6 +16,16 @@ export default function UploadPage() {
   const [uploadedScenarios, setUploadedScenarios] = useState<any>(null);
   const [generatedScenarios, setGeneratedScenarios] = useState<any[]>([]);
   const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
+  const [configuration, setConfiguration] = useState<CompanyConfiguration | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    // Load saved configuration from localStorage
+    const savedConfig = localStorage.getItem('agentConfiguration');
+    if (savedConfig) {
+      setConfiguration(JSON.parse(savedConfig));
+    }
+  }, []);
 
   const toggleCard = (index: number) => {
     setExpandedCards(prev => ({
@@ -58,11 +70,38 @@ export default function UploadPage() {
       const content = await file.text();
       const jsonData = JSON.parse(content);
       setUploadedScenarios(jsonData);
-      toast.success("File uploaded successfully!");
-      setFiles([]); // Clear files after successful upload
+
+      // Analyze the scenarios
+      const response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(jsonData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to analyze scenarios');
+      }
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.message || 'Analysis failed');
+      }
+
+      // Store both the scenarios and the suggested configuration
+      localStorage.setItem('uploadedScenarios', JSON.stringify(jsonData));
+      localStorage.setItem('suggestedConfiguration', JSON.stringify(data.configuration));
+      
+      toast.success("Scenarios analyzed successfully! Redirecting to configuration...");
+      
+      // Redirect to the configuration page
+      router.push('/configuration');
+      
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error('Failed to parse JSON file');
+      toast.error(error instanceof Error ? error.message : 'Failed to process file');
     } finally {
       setIsUploading(false);
     }
@@ -74,6 +113,11 @@ export default function UploadPage() {
       return;
     }
 
+    if (!configuration) {
+      toast.error("Please complete the agent configuration first");
+      return;
+    }
+
     setIsGenerating(true);
     try {
       const response = await fetch('/api/generate', {
@@ -81,7 +125,10 @@ export default function UploadPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(uploadedScenarios),
+        body: JSON.stringify({
+          scenarios: uploadedScenarios.scenarios,
+          configuration
+        }),
       });
 
       const data = await response.json();
@@ -123,15 +170,18 @@ export default function UploadPage() {
   };
 
   return (
-    <div className="container py-12">
-      <Card className="max-w-3xl mx-auto">
-        <CardHeader>
-          <CardTitle className="text-3xl">Upload Test Data</CardTitle>
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <Card className="w-full max-w-3xl">
+        <CardHeader className="text-center">
+          <CardTitle className="text-3xl">Upload Test Scenarios</CardTitle>
           <CardDescription className="text-lg">
-            Upload your existing test scenarios or generate new ones
+            Start by uploading your existing scenarios to help us understand your needs
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          <div className="text-sm text-muted-foreground text-center mb-6">
+            We'll analyze your scenarios to suggest an optimal configuration for your AI agent
+          </div>
           <div 
             {...getRootProps()} 
             className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors

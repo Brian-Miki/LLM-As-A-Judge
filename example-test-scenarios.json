@@ -1,0 +1,186 @@
+{
+  "scenarios": [
+    {
+      "id": "SC001",
+      "title": "Order Status Inquiry with Multiple Items",
+      "description": "Customer requesting status update for multiple items from different orders",
+      "input": {
+        "customer_message": "Hi, I ordered several items last week - a laptop on Monday (Order #45678) and some accessories on Wednesday (Order #45680). Can you tell me when they'll arrive? The laptop is quite urgent as I need it for a presentation.",
+        "context": {
+          "customer_tier": "Premium",
+          "previous_contacts": 0,
+          "order_history": {
+            "total_orders": 5,
+            "recent_orders": [
+              {"id": "45678", "status": "shipped", "estimated_delivery": "2024-03-15"},
+              {"id": "45680", "status": "processing", "estimated_delivery": "2024-03-18"}
+            ]
+          }
+        }
+      },
+      "expected_response": {
+        "key_points": [
+          "Acknowledge the urgency of the laptop order",
+          "Provide status for both orders separately",
+          "Explain any delays in the accessories order",
+          "Offer expedited shipping option for accessories if available"
+        ],
+        "tone": "Professional and proactive",
+        "required_info": [
+          "Specific delivery dates for both orders",
+          "Current status of each order",
+          "Tracking information for shipped items",
+          "Explanation for any processing delays"
+        ]
+      }
+    },
+    {
+      "id": "SC002",
+      "title": "Technical Issue with Language Barrier",
+      "description": "Non-native English speaker reporting complex software problem",
+      "input": {
+        "customer_message": "Hello, sorry my English not perfect. I try to export big report PDF but system crash always. I wait 30 minute but nothing happen. Very important for meeting tomorrow please help fast.",
+        "context": {
+          "customer_tier": "Business",
+          "product": "Analytics Dashboard Pro",
+          "system_status": {
+            "server_load": "high",
+            "known_issues": ["Large PDF export timeout"]
+          },
+          "customer_language": "Mandarin (detected)"
+        }
+      },
+      "expected_response": {
+        "key_points": [
+          "Acknowledge language difference respectfully",
+          "Simplify technical explanations",
+          "Address urgency for tomorrow's meeting",
+          "Provide clear step-by-step solution"
+        ],
+        "tone": "Patient and clear",
+        "required_info": [
+          "Current system status",
+          "Alternative export options",
+          "Estimated resolution time",
+          "Workaround steps if available"
+        ]
+      }
+    },
+    {
+      "id": "SC003",
+      "title": "Refund Request with Missing Documentation",
+      "description": "Customer seeking refund for damaged item but hasn't provided required photos",
+      "input": {
+        "customer_message": "I'm extremely frustrated! I received my order three days ago and the product was damaged. I want a full refund immediately. This is completely unacceptable, and I've already wasted enough time dealing with this!",
+        "context": {
+          "customer_tier": "Standard",
+          "order_info": {
+            "order_id": "67890",
+            "purchase_date": "2024-03-01",
+            "delivery_date": "2024-03-10",
+            "refund_policy": "Photos required for damaged items"
+          },
+          "interaction_history": {
+            "previous_refunds": 0,
+            "account_standing": "good"
+          }
+        }
+      },
+      "expected_response": {
+        "key_points": [
+          "Show empathy for the situation",
+          "Explain refund process requirements clearly",
+          "Guide on photo submission process",
+          "Offer expedited refund once requirements are met"
+        ],
+        "tone": "Empathetic but firm",
+        "required_info": [
+          "Specific photo requirements",
+          "Steps to submit documentation",
+          "Expected refund timeline",
+          "Reference number for follow-up"
+        ]
+      }
+    },
+    {
+      "id": "SC004",
+      "title": "Subscription Upgrade with Billing Confusion",
+      "description": "Customer wanting to upgrade but confused about pro-rated charges and features",
+      "input": {
+        "customer_message": "I'm currently on the basic plan ($29/month) and want to upgrade to premium, but I'm confused about the charges. Will I get a credit for this month? Also, do I get access to all premium features immediately? I need the advanced reporting feature for a project due next week.",
+        "context": {
+          "customer_tier": "Basic",
+          "subscription_info": {
+            "current_plan": "Basic",
+            "billing_cycle": "Monthly",
+            "last_payment_date": "2024-02-28",
+            "next_billing_date": "2024-03-28"
+          },
+          "available_plans": {
+            "premium": {
+              "price": 79,
+              "features": ["Advanced Reporting", "Priority Support", "Custom Integration"]
+            }
+          }
+        }
+      },
+      "expected_response": {
+        "key_points": [
+          "Explain pro-rated billing calculation",
+          "Confirm immediate feature access",
+          "Address project deadline concerns",
+          "Outline upgrade process steps"
+        ],
+        "tone": "Helpful and informative",
+        "required_info": [
+          "Specific pro-rated amount",
+          "Feature activation timeline",
+          "Payment processing details",
+          "Support options for advanced reporting"
+        ]
+      }
+    },
+    {
+      "id": "SC005",
+      "title": "Account Security Concern",
+      "description": "Customer reporting suspicious activity with urgent security implications",
+      "input": {
+        "customer_message": "I just got an email saying there were 3 failed login attempts to my account from Russia, but I'm in Canada. I have important client data in my account. Can you help me secure it right away? Should I be worried about data breach?",
+        "context": {
+          "customer_tier": "Enterprise",
+          "security_logs": {
+            "failed_attempts": [
+              {"timestamp": "2024-03-12T15:23:45Z", "location": "Moscow, Russia"},
+              {"timestamp": "2024-03-12T15:24:12Z", "location": "Moscow, Russia"},
+              {"timestamp": "2024-03-12T15:24:30Z", "location": "Moscow, Russia"}
+            ],
+            "last_successful_login": "2024-03-12T14:00:00Z",
+            "location": "Toronto, Canada"
+          }
+        }
+      },
+      "expected_response": {
+        "key_points": [
+          "Address security concerns immediately",
+          "Explain security measures in place",
+          "Guide through immediate action steps",
+          "Provide reassurance about data protection"
+        ],
+        "tone": "Urgent and reassuring",
+        "required_info": [
+          "Account status confirmation",
+          "Steps to enable 2FA",
+          "Password reset procedure",
+          "Security best practices"
+        ]
+      }
+    }
+  ],
+  "metadata": {
+    "version": "1.0",
+    "created_at": "2024-03-12T00:00:00Z",
+    "scenario_count": 5,
+    "category": "customer_support",
+    "description": "Diverse set of customer support scenarios covering technical issues, billing, security, and service requests"
+  }
+} 

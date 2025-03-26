@@ -1,0 +1,80 @@
+{
+  "scenarios": [
+    {
+      "id": "1",
+      "title": "Order Status Inquiry",
+      "description": "Customer asking about their order status",
+      "input": {
+        "customer_message": "Hi, I placed an order yesterday (#12345) and I haven't received any shipping updates. Can you help me track it?",
+        "context": {
+          "order_number": "12345",
+          "order_date": "2024-03-20",
+          "customer_type": "regular"
+        }
+      },
+      "expected_response": {
+        "key_points": [
+          "Acknowledge the customer's concern",
+          "Look up order #12345",
+          "Provide current status",
+          "Offer estimated delivery date"
+        ],
+        "tone": "helpful and informative",
+        "required_info": ["order_status", "tracking_number", "estimated_delivery"]
+      }
+    },
+    {
+      "id": "2",
+      "title": "Refund Request",
+      "description": "Customer requesting a refund for damaged item",
+      "input": {
+        "customer_message": "The product I received is damaged. I'd like to request a refund please. My order number is #54321.",
+        "context": {
+          "order_number": "54321",
+          "order_date": "2024-03-15",
+          "customer_type": "first_time",
+          "product_condition": "damaged"
+        }
+      },
+      "expected_response": {
+        "key_points": [
+          "Express empathy for the situation",
+          "Explain refund policy",
+          "Guide through return process",
+          "Offer immediate resolution"
+        ],
+        "tone": "empathetic and solution-oriented",
+        "required_actions": ["verify_order", "initiate_refund", "provide_return_label"]
+      }
+    },
+    {
+      "id": "3",
+      "title": "Product Information Request",
+      "description": "Customer asking about product specifications",
+      "input": {
+        "customer_message": "Can you tell me if your wireless headphones are compatible with iPhone 15? Also, what's the battery life like?",
+        "context": {
+          "product_category": "electronics",
+          "product_type": "wireless_headphones",
+          "customer_type": "prospective"
+        }
+      },
+      "expected_response": {
+        "key_points": [
+          "Confirm iPhone 15 compatibility",
+          "Provide battery life details",
+          "Mention key features",
+          "Include any relevant promotions"
+        ],
+        "tone": "knowledgeable and enthusiastic",
+        "required_info": ["compatibility", "battery_specs", "key_features"]
+      }
+    }
+  ],
+  "metadata": {
+    "version": "1.0",
+    "created_at": "2024-03-21",
+    "scenario_count": 3,
+    "category": "customer_support"
+  }
+}

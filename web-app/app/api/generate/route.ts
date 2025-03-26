@@ -161,20 +161,43 @@ async function scoreAnswer(example: HallucinationExample) {
 
 export async function POST(request: Request) {
   try {
-    const { scenarios } = await request.json();
+    const { scenarios, configuration } = await request.json();
 
-    const prompt = `Given these example customer support scenarios:
+    const prompt = `Given the following company context and example scenarios, generate challenging edge case scenarios for testing their customer service AI agent.
+
+COMPANY INFORMATION:
+Agent Name: ${configuration.agent_description.name}
+Purpose: ${configuration.agent_description.purpose}
+
+Key Features:
+${configuration.features.map((f: { title: string; description: string }) => `- ${f.title}: ${f.description}`).join('\n')}
+
+Existing Scenarios:
 ${JSON.stringify(scenarios, null, 2)}
 
-Generate 3 new unique customer support scenarios that follow the same format and structure as the examples above. The scenarios should be realistic, diverse, and maintain consistency with the fields and schema of the provided examples.
+Generate 3 challenging edge case scenarios that will test the limits and robustness of this specific customer service AI agent. Focus on:
+1. Complex multi-part requests that test multiple features (${configuration.features.map((f: { title: string }) => f.title).join(', ')})
+2. Emotionally charged situations aligned with the agent's purpose
+3. Ambiguous or conflicting information specific to their use case
+4. Time-sensitive or urgent matters within their domain
+5. Edge cases in their specific policy interpretation
+6. Cultural or language nuances relevant to their customer base
+7. Technical system limitations of their features
+8. Unusual or rare situations in their industry
 
-Return only the generated scenarios as a JSON object with a "scenarios" array.`;
+For each scenario, ensure:
+- The customer_message includes realistic complexity and challenges specific to their use case
+- The context provides relevant background information about their business
+- The expected_response includes specific success criteria aligned with their agent's capabilities
+- The scenario tests multiple aspects of their agent's core features
+
+Return the scenarios in the same JSON format as the examples, maintaining consistency with the schema while pushing the boundaries of what their specific agent should handle.`;
 
     const completion = await openai.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
       model: "gpt-4o-mini",
       response_format: { type: "json_object" },
-      temperature: 0.7,
+      temperature: 0.8,
     });
 
     const generatedContent = completion.choices[0].message.content;

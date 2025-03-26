@@ -16,7 +16,7 @@ export default function Home() {
         </p>
 
         <div className="mb-12">
-          <Link href="/onboarding">
+          <Link href="/upload">
             <Button size="lg" className="text-lg px-8">
               Get Started
               <ArrowRight className="ml-2 h-5 w-5" />
@@ -30,10 +30,10 @@ export default function Home() {
               <div className="bg-primary/10 rounded-full w-8 h-8 flex items-center justify-center">
                 <span className="text-primary font-medium">1</span>
               </div>
-              <h2 className="text-xl font-semibold">Create Agent Profile</h2>
+              <h2 className="text-xl font-semibold">Upload Test Scenarios</h2>
             </div>
             <p className="text-muted-foreground pl-10">
-              Define your agent's capabilities, test scenarios, and user personas to establish evaluation criteria
+              Upload your existing test scenarios to help us understand your needs and suggest an optimal configuration
             </p>
           </div>
 
@@ -42,10 +42,10 @@ export default function Home() {
               <div className="bg-primary/10 rounded-full w-8 h-8 flex items-center justify-center">
                 <span className="text-primary font-medium">2</span>
               </div>
-              <h2 className="text-xl font-semibold">Upload & Generate Data</h2>
+              <h2 className="text-xl font-semibold">Configure Your Agent</h2>
             </div>
             <p className="text-muted-foreground pl-10">
-              Upload your existing test data or generate new scenarios based on your agent's profile
+              Review and customize the suggested configuration based on your scenarios
             </p>
           </div>
         </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
@@ -12,6 +12,7 @@ import { CompanyConfiguration, defaultConfiguration, Feature, Scenario, Persona,
 import { Plus, X, ArrowLeft, ArrowRight, ChevronUp, ChevronDown } from "lucide-react";
 import { SectionHeader } from "./SectionHeader";
 import { StepIndicator } from "./StepIndicator";
+import { toast } from "sonner";
 
 const SECTION_INFO = {
   features: {
@@ -100,6 +101,45 @@ export function ConfigurationForm({ onComplete }: ConfigurationFormProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [collapsedCards, setCollapsedCards] = useState<Record<string, boolean>>({});
 
+  useEffect(() => {
+    // Try to load suggested configuration first
+    const suggestedConfig = localStorage.getItem('suggestedConfiguration');
+    if (suggestedConfig) {
+      try {
+        const parsedConfig = JSON.parse(suggestedConfig);
+        // Make sure we have a valid configuration object
+        if (parsedConfig && typeof parsedConfig === 'object') {
+          // Ensure all required sections exist with defaults if missing
+          const validConfig = {
+            agent_description: {
+              name: parsedConfig.agent_description?.name || defaultConfiguration.agent_description.name,
+              purpose: parsedConfig.agent_description?.purpose || defaultConfiguration.agent_description.purpose
+            },
+            features: Array.isArray(parsedConfig.features) ? parsedConfig.features : defaultConfiguration.features,
+            scenarios: Array.isArray(parsedConfig.scenarios) ? parsedConfig.scenarios : defaultConfiguration.scenarios,
+            personas: Array.isArray(parsedConfig.personas) ? parsedConfig.personas : defaultConfiguration.personas,
+            evaluation_criteria: Array.isArray(parsedConfig.evaluation_criteria) ? parsedConfig.evaluation_criteria : defaultConfiguration.evaluation_criteria
+          };
+          setConfig(validConfig);
+          // Remove the suggestion after loading
+          localStorage.removeItem('suggestedConfiguration');
+          // Show success message
+          toast.success("Configuration suggested based on your scenarios!");
+        } else {
+          throw new Error('Invalid configuration format');
+        }
+      } catch (error) {
+        console.error('Error parsing suggested configuration:', error);
+        // Fall back to default configuration
+        setConfig(defaultConfiguration);
+        toast.error("Failed to load suggested configuration");
+      }
+    } else {
+      // Fall back to default configuration if no suggestion exists
+      setConfig(defaultConfiguration);
+    }
+  }, []);
+
   const toggleCard = (id: string) => {
     setCollapsedCards(prev => ({
       ...prev,
@@ -109,7 +149,11 @@ export function ConfigurationForm({ onComplete }: ConfigurationFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Configuration submitted:", config);
+    
+    // Store the configuration
+    localStorage.setItem('agentConfiguration', JSON.stringify(config));
+    
+    // Navigate to upload page
     router.push('/upload');
   };
 
