@@ -12,27 +12,8 @@ import { useRouter } from "next/navigation";
 export default function UploadPage() {
   const [files, setFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [uploadedScenarios, setUploadedScenarios] = useState<any>(null);
-  const [generatedScenarios, setGeneratedScenarios] = useState<any[]>([]);
-  const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
-  const [configuration, setConfiguration] = useState<CompanyConfiguration | null>(null);
   const router = useRouter();
-
-  useEffect(() => {
-    // Load saved configuration from localStorage
-    const savedConfig = localStorage.getItem('agentConfiguration');
-    if (savedConfig) {
-      setConfiguration(JSON.parse(savedConfig));
-    }
-  }, []);
-
-  const toggleCard = (index: number) => {
-    setExpandedCards(prev => ({
-      ...prev,
-      [index]: !prev[index]
-    }));
-  };
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const validFiles = acceptedFiles.filter(file => {
@@ -104,68 +85,6 @@ export default function UploadPage() {
       toast.error(error instanceof Error ? error.message : 'Failed to process file');
     } finally {
       setIsUploading(false);
-    }
-  };
-
-  const handleGenerate = async () => {
-    if (!uploadedScenarios) {
-      toast.error("Please upload a scenarios file first");
-      return;
-    }
-
-    if (!configuration) {
-      toast.error("Please complete the agent configuration first");
-      return;
-    }
-
-    setIsGenerating(true);
-    try {
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          scenarios: uploadedScenarios.scenarios,
-          configuration
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Generation failed');
-      }
-
-      setGeneratedScenarios(data.scenarios);
-
-      // Create a new file with combined scenarios
-      const combinedScenarios = {
-        scenarios: [...uploadedScenarios.scenarios, ...data.scenarios],
-        metadata: {
-          ...uploadedScenarios.metadata,
-          scenario_count: uploadedScenarios.scenarios.length + data.scenarios.length,
-          generated_at: new Date().toISOString()
-        }
-      };
-
-      // Create and trigger download of the new file
-      const blob = new Blob([JSON.stringify(combinedScenarios, null, 2)], { type: 'application/json' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'generated-scenarios.json';
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      toast.success("New scenarios generated successfully!");
-    } catch (error) {
-      console.error('Generation error:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to generate scenarios');
-    } finally {
-      setIsGenerating(false);
     }
   };
 
@@ -258,115 +177,6 @@ export default function UploadPage() {
                   )}
                 </Button>
               </div>
-            </div>
-          )}
-
-          {uploadedScenarios && (
-            <div className="pt-6 border-t">
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h4 className="font-medium">Generate More Scenarios</h4>
-                  <p className="text-sm text-muted-foreground">
-                    {isGenerating 
-                      ? "This may take 15-30 seconds as we use AI to generate high-quality scenarios..."
-                      : "Create additional test scenarios based on your examples"
-                    }
-                  </p>
-                </div>
-                <Button
-                  onClick={handleGenerate}
-                  size="lg"
-                  disabled={isGenerating}
-                  className="gap-2"
-                >
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <Wand2 className="w-4 h-4" />
-                      Generate More
-                    </>
-                  )}
-                </Button>
-              </div>
-
-              {generatedScenarios.length > 0 && (
-                <div className="space-y-4">
-                  <h4 className="font-medium">Generated Scenarios:</h4>
-                  <div className="space-y-4">
-                    {generatedScenarios.map((scenario, index) => (
-                      <Card key={index} className="p-4">
-                        <div 
-                          className="flex items-center justify-between cursor-pointer"
-                          onClick={() => toggleCard(index)}
-                        >
-                          <div className="flex-1">
-                            <div className="flex justify-between items-start">
-                              <h5 className="font-medium text-lg">{scenario?.title}</h5>
-                              <span className="text-sm text-muted-foreground">ID: {scenario?.id}</span>
-                            </div>
-                            {!expandedCards[index] && (
-                              <p className="text-sm text-muted-foreground line-clamp-1">{scenario?.description}</p>
-                            )}
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="ml-4 h-8 w-8 hover:bg-muted"
-                          >
-                            {expandedCards[index] ? (
-                              <ChevronUp className="h-4 w-4" />
-                            ) : (
-                              <ChevronDown className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </div>
-
-                        {expandedCards[index] && (
-                          <div className="space-y-2 mt-4">
-                            <p className="text-sm text-muted-foreground">{scenario?.description}</p>
-                            <div className="mt-4 space-y-3">
-                              <div>
-                                <h6 className="text-sm font-medium mb-1">Customer Message:</h6>
-                                <p className="text-sm bg-muted p-2 rounded-md">
-                                  {scenario?.input?.customer_message}
-                                </p>
-                              </div>
-                              <div>
-                                <h6 className="text-sm font-medium mb-1">Expected Response:</h6>
-                                <div className="text-sm space-y-2">
-                                  <div>
-                                    <span className="font-medium">Tone:</span> {scenario?.expected_response?.tone}
-                                  </div>
-                                  <div>
-                                    <span className="font-medium">Key Points:</span>
-                                    <ul className="list-disc list-inside pl-2">
-                                      {scenario?.expected_response?.key_points?.map((point: string, i: number) => (
-                                        <li key={i}>{point}</li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                  <div>
-                                    <span className="font-medium">Required Info:</span>
-                                    <ul className="list-disc list-inside pl-2">
-                                      {scenario?.expected_response?.required_info?.map((info: string, i: number) => (
-                                        <li key={i}>{info}</li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           )}
 

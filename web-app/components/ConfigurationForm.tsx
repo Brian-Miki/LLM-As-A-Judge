@@ -189,8 +189,8 @@ export function ConfigurationForm({ onComplete }: ConfigurationFormProps) {
     // Store the configuration
     localStorage.setItem('agentConfiguration', JSON.stringify(config));
     
-    // Navigate to upload page
-    router.push('/upload');
+    // Navigate to scenarios page
+    router.push('/scenarios');
   };
 
   const nextStep = () => {
@@ -253,13 +253,13 @@ export function ConfigurationForm({ onComplete }: ConfigurationFormProps) {
     const hasContent = item.title.trim() !== "";
 
     return (
-      <Card key={index} className="relative">
-        <div className="flex items-center justify-between p-4 pr-14">
+      <Card key={index} className="relative overflow-hidden">
+        <div className="flex items-center justify-between p-6">
           {hasContent ? (
-            <div className="flex-1">
+            <div className="flex-1 pr-14">
               <h4 className="font-medium truncate">{item.title}</h4>
               {isCollapsed && (
-                <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">
+                <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
                   {item.description}
                 </p>
               )}
@@ -267,7 +267,7 @@ export function ConfigurationForm({ onComplete }: ConfigurationFormProps) {
           ) : (
             <div className="text-sm text-muted-foreground">New item</div>
           )}
-          <div className="absolute right-2 top-2 flex gap-2">
+          <div className="absolute right-4 top-4 flex gap-2">
             {hasContent && (
               <Button
                 type="button"
@@ -298,7 +298,7 @@ export function ConfigurationForm({ onComplete }: ConfigurationFormProps) {
           </div>
         </div>
         {!isCollapsed && (
-          <CardContent className="pt-0 border-t">
+          <CardContent className="border-t px-6 py-4">
             {children}
           </CardContent>
         )}
@@ -667,14 +667,10 @@ export function ConfigurationForm({ onComplete }: ConfigurationFormProps) {
                   </Button>
                   {currentStep === STEPS.length - 1 ? (
                     <Button 
-                      type="button" 
-                      onClick={() => {
-                        console.log("Configuration submitted:", config);
-                        router.push('/upload');
-                      }}
+                      type="submit" 
                       className="flex items-center gap-2"
                     >
-                      Save Configuration
+                      Save & Generate Scenarios
                     </Button>
                   ) : (
                     <Button
